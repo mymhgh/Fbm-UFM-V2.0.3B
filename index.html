@@ -941,18 +941,18 @@
                         <div class="detail-label">User ID:</div>
                         <div class="detail-value">${submission.telegramUserId || 'N/A'}</div>
                     </div>
-                    <div class="detail-row">
+                   <div class="detail-row">
                         <div class="detail-label">Username:</div>
                         <div class="detail-value">${submission.telegramUsername || 'N/A'}</div>
                     </div>
-                    <div class="detail-row">
+                  <!--  <div class="detail-row">
                         <div class="detail-label">Full Name:</div>
                         <div class="detail-value">${submission.telegramFullName || 'N/A'}</div>
-                    </div>
+                    </div> 
                     <div class="detail-row">
                         <div class="detail-label">TG Username:</div>
                         <div class="detail-value">${submission.tglUsername || 'N/A'}</div>
-                    </div>
+                    </div> -->
                     <div class="detail-row">
                         <div class="detail-label">Account Type:</div>
                         <div class="detail-value">${submission.accountType || 'N/A'}</div>
@@ -1161,14 +1161,15 @@ async function updateUserInFirestore(userId, earning, receivedIdsCount) {
             const submissionDate = submission.submissionTime || new Date(submission.timestamp || Date.now()).toLocaleDateString();
             
             // Base message with all original information
-            let message = `${getStatusEmoji(action)} Your submission status has been updated to ${action.toUpperCase()}.\n\n`;
+            let message = `${getStatusEmoji(action)} আপনার জমা দেওয়ার ফাইল ${action.toUpperCase()} করা হয়েছে।\n\n`;
             
-            // Add all original information
-            message += `Description: ${submission.description || 'N/A'}\n`;
-            message += `Account Type: ${submission.accountType || 'N/A'}\n`;
-            message += `2FA-Cookie: ${submission.cookie2fa || 'N/A'}\n`;
-            message += `Friend Type: ${submission.fdType || 'N/A'}\n`;
-            message += `Submit Date: ${submissionDate}\n`;
+           // Add all original information
+message += `AgT: ${submission.accountType} `;
+message += `- ${submission.mailBox} \n`;
+message += `FcT: ${submission.fdType} -`;
+message += ` ${submission.cookie2fa}\n`;
+message += `Code: ${submission.timestamp}\n`; // Timestamp কে মনোফন্টে দেখানোর জন্য
+message += `Date: ${submissionDate}\n`;
             
             // Add rejection reason if applicable
             if (action === 'rejected' && additionalData.rejectReason) {
@@ -1181,7 +1182,8 @@ async function updateUserInFirestore(userId, earning, receivedIdsCount) {
                     message += `\nReceived IDs: ${additionalData.receivedIds}\n`;
                 }
                 if (additionalData.earning) {
-                    message += `Earning: $${additionalData.earning}\n`;
+                    message += `Earning: $${additionalData.earning}\n\n`;
+                    message += `আপনার উপার্জন ব্যালেন্সে জমা করা হয়েছে।\nঅনুগ্রহ করে আপনার ব্যালেন্স চেক করুন।\n`; // বিশেষ নোট যোগ করা হয়েছে
                 }
             }
             
