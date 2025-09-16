@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border: #dee2e6;
+            --bg-color: #f5f7fb;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --header-bg: linear-gradient(120deg, var(--primary), var(--secondary));
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --counter-bg: rgba(255, 255, 255, 0.2);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e9ecef;
+            --header-bg: linear-gradient(120deg, #2d3a8c, #3f37c9);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --counter-bg: rgba(0, 0, 0, 0.3);
+            --light: #2d2d2d;
+            --border: #444;
+            --light-gray: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--header-bg);
+            color: white;
+            padding: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+        }
+        
+        .counters {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .counter {
+            background: var(--counter-bg);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .counter-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .counter-label {
+            font-size: 14px;
+        }
+        
+
+
+
+
+
+
+.search-filter {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.search-bar {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-bar input {
+    padding: 12px 15px 12px 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+    font-size: 16px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.search-bar input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.search-bar i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray);
+}
+
+/* Platform and Date filter container - always side by side */
+.filter-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: nowrap; /* Never wrap to new line */
+}
+
+.filter-dropdown {
+    position: relative;
+    min-width: 150px;
+}
+
+.filter-select {
+    padding: 12px 40px 12px 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    appearance: none;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 600;
+    background: var(--card-bg) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 15px center;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.date-filter {
+    position: relative;
+    min-width: 180px;
+}
+
+.date-filter input {
+    padding: 12px 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+    font-size: 16px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.date-filter input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .search-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-bar {
+        min-width: auto;
+    }
+    
+    .filter-group {
+        flex-wrap: wrap; /* Allow wrapping on very small screens */
+    }
+    
+    .filter-dropdown,
+    .date-filter {
+        min-width: auto;
+        flex: 1;
+    }
+}
+
+
+        
+        .status-tabs {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+        
+        .status-tab {
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .status-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .file-table {
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 4rem;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            pointer-events: none;
+            display: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            position: relative;
+            z-index: 2;
+        }
+        
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-color);
+        }
+        
+        th {
+            background-color: var(--light);
+            font-weight: 600;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--light);
+        }
+        
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:disabled {
+            background: var(--light-gray);
+            color: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            background: var(--secondary);
+        }
+        
+        .dropdown-btn {
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .dropdown-btn:hover {
+            color: var(--primary);
+        }
+        
+        .dropdown-content {
+            display: none;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 10px;
+            margin-top: 10px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        
+        .dropdown-content.show {
+            display: block;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            width: 150px;
+            color: var(--text-color);
+        }
+        
+        .detail-value {
+            flex: 1;
+            color: var(--gray);
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        
+        .btn-reject {
+            background: var(--warning);
+        }
+        
+        .btn-processing {
+            background: #ff9843;
+        }
+        
+        .btn-approve {
+            background: #2ecc71;
+        }
+        
+        .btn-back {
+            background: #9b59b6;
+        }
+        
+        .btn-receive {
+            background: #27ae60;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.success {
+            background: #2ecc71;
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-processing {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-received {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-back {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-new {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: var(--warning);
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .form-control:disabled {
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 16px;
+            background: var(--card-bg) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 15px center;
+            appearance: none;
+            color: var(--text-color);
+        }
+        
+        .form-select:disabled {
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .conditional-field {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 5px;
+            border-left: 4px solid var(--primary);
+            animation: slideDown 0.3s ease;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(30deg);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideDown {
+            from { 
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .search-filter {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .search-bar input {
+                width: 100%;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .search-filter {
+                flex-direction: column;
+            }
+            
+            .status-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .status-tab {
+                flex: 1 0 33%;
+                margin-bottom: 5px;
+                min-width: 100px;
+                font-size: 14px;
+                padding: 8px 10px;
+            }
+            
+            .file-table {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 800px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                margin-bottom: 10px;
+            }
+            
+            .detail-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .counters {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+            
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-file-alt"></i>
+                    File Management
+                </div>
+                
+                <div class="counters">
+                    <div class="counter">
+                        <div class="counter-value" id="dailyCounter">0</div>
+                        <div class="counter-label">Today's Files</div>
+                    </div>
+                    <div class="counter">
+                        <div class="counter-value" id="totalCounter">0</div>
+                        <div class="counter-label">Total Files</div>
+                    </div>
+                </div>
+                
+                
+<div class="search-filter">
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search by UID or Document ID...">
+    </div>
+    
+    <div class="filter-group">
+        <div class="filter-dropdown">
+            <select class="filter-select" id="platformFilter">
+                <option value="all">All Platforms</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Gmail">Gmail</option>
+                <option value="Instagram">Instagram</option>
+            </select>
+        </div>
+        
+        <div class="date-filter">
+            <input type="date" id="dateFilter">
+        </div>
+    </div>
+</div>
+
+
+        </header>
+        
+        <div class="status-tabs">
+            <div class="status-tab active" data-status="all">All Files</div>
+            <div class="status-tab" data-status="new">New Files</div>
+            <div class="status-tab" data-status="pending">Pending</div>
+            <div class="status-tab" data-status="processing">Processing</div>
+            <div class="status-tab" data-status="approved">Approved</div>
+            <div class="status-tab" data-status="rejected">Rejected</div>
+        </div>
+        
+        <div class="file-table">
+            <div class="watermark" id="watermark">APPROVED</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Document ID</th>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Account Type</th>
+                        <th>Submission Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fileTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px;">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary);"></i>
+                                <p>Loading data from Firebase...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <!-- Modal for file actions -->
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-file-alt"></i> File Action</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalFileDetails"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Action:</label>
+                    <select class="form-select" id="actionSelect">
+                        <option value="" disabled selected>Select an action</option>
+                        <option value="processing">Processing</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="approved">Approved</option>
+                    </select>
+                </div>
+                
+                <div class="conditional-field" id="rejectReasonField">
+                    <div class="form-group">
+                        <label class="form-label">Rejection Reason:</label>
+                        <textarea class="form-control form-textarea" id="rejectReason" placeholder="Enter the reason for rejection..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="conditional-field" id="approveFields">
+                    <div class="form-group">
+                        <label class="form-label">Received IDs:</label>
+                        <input type="text" class="form-control" id="receivedIds" placeholder="Enter received IDs count...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Earning Amount:</label>
+                        <input type="number" class="form-control" id="earningAmount" placeholder="Enter earning amount...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" id="cancelAction">Cancel</button>
+                <button class="action-btn btn-approve" id="submitAction">Submit Action</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUdL6cO1j2I5kL2Q2Z2Z2Z2Z2Z2Z2Z2Z2",
+            authDomain: "fbm-market-bot.firebaseapp.com",
+            databaseURL: "https://fbm-market-bot-default-rtdb.firebaseio.com",
+            projectId: "fbm-market-bot",
+            storageBucket: "fbm-market-bot.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcd1234efgh5678"
+        };
+
+        // Initialize Firebase with both Realtime Database and Firestore
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(); // Realtime Database
+        const firestore = firebase.firestore(); // Firestore Database
+
+        // Telegram bot configuration
+        const telegramBotToken = "7673657711:AAG9aHlpI8_Egvwi0fY9rxA4qyEfqOw16nU";
+
+        // DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const platformFilter = document.getElementById('platformFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const statusTabs = document.querySelectorAll('.status-tab');
+        const fileTableBody = document.getElementById('fileTableBody');
+        const notification = document.getElementById('notification');
+        const dailyCounter = document.getElementById('dailyCounter');
+        const totalCounter = document.getElementById('totalCounter');
+        const actionModal = document.getElementById('actionModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelAction = document.getElementById('cancelAction');
+        const submitAction = document.getElementById('submitAction');
+        const actionSelect = document.getElementById('actionSelect');
+        const rejectReasonField = document.getElementById('rejectReasonField');
+        const rejectReason = document.getElementById('rejectReason');
+        const approveFields = document.getElementById('approveFields');
+        const receivedIds = document.getElementById('receivedIds');
+        const earningAmount = document.getElementById('earningAmount');
+        const modalFileDetails = document.getElementById('modalFileDetails');
+        const watermark = document.getElementById('watermark');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Current filters and data
+        let currentPlatformFilter = 'all';
+        let currentStatusFilter = 'all';
+        let currentSearchTerm = '';
+        let currentDateFilter = '';
+        let allSubmissions = [];
+        let currentSubmissionId = null;
+        let currentTheme = 'light';
+
+        // Initialize the application
+        function initApp() {
+            // Load theme preference
+            loadThemePreference();
+            
+            // Load data from Firebase
+            loadSubmissions();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Load theme preference from localStorage
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                currentTheme = savedTheme;
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                updateThemeToggleIcon();
+            }
+        }
+
+        // Update theme toggle icon based on current theme
+        function updateThemeToggleIcon() {
+            if (currentTheme === 'dark') {
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        }
+
+        // Toggle theme between light and dark
+        function toggleTheme() {
+            if (currentTheme === 'light') {
+                currentTheme = 'dark';
+            } else {
+                currentTheme = 'light';
+            }
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeToggleIcon();
+        }
+
+        // Load submissions from Firebase
+        function loadSubmissions() {
+            const submissionsRef = database.ref('submissions');
+            
+            submissionsRef.on('value', (snapshot) => {
+                allSubmissions = [];
+                snapshot.forEach((childSnapshot) => {
+                    const submission = childSnapshot.val();
+                    submission.id = childSnapshot.key; // This is the document ID
+                    
+                    // Set default status if not exists
+                    if (!submission.status) {
+                        submission.status = 'pending';
+                    }
+                    
+                    // Set new status for files submitted today
+                    const submissionDate = new Date(submission.timestamp || Date.now());
+                    const today = new Date();
+                    if (submissionDate.toDateString() === today.toDateString()) {
+                        submission.isNew = true;
+                    } else {
+                        submission.isNew = false;
+                    }
+                    
+                    allSubmissions.push(submission);
+                });
+                
+                // Update counters
+                updateCounters();
+                
+                // Render the table
+                renderTable();
+            }, (error) => {
+                showNotification('Error loading data: ' + error.message, 'error');
+            });
+        }
+
+        // Update counters
+        function updateCounters() {
+            const today = new Date();
+            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            const dailyCount = allSubmissions.filter(submission => {
+                const submissionDate = new Date(submission.timestamp || Date.now());
+                return submissionDate >= todayStart;
+            }).length;
+            
+            dailyCounter.textContent = dailyCount;
+            totalCounter.textContent = allSubmissions.length;
+        }
+
+        // Render the table based on current filters
+        function renderTable() {
+            // Filter submissions based on current filters
+            let filteredSubmissions = allSubmissions.filter(submission => {
+                // Platform filter
+                if (currentPlatformFilter !== 'all' && submission.accountType !== currentPlatformFilter) {
+                    return false;
+                }
+                
+                // Status filter
+                if (currentStatusFilter !== 'all') {
+                    if (currentStatusFilter === 'new') {
+                        if (!submission.isNew) return false;
+                    } else if (submission.status !== currentStatusFilter) {
+                        return false;
+                    }
+                }
+                
+                // Date filter
+                if (currentDateFilter !== '') {
+                    const submissionDate = new Date(submission.timestamp || Date.now()).toISOString().split('T')[0];
+                    if (submissionDate !== currentDateFilter) {
+                        return false;
+                    }
+                }
+                
+                // Search filter
+                if (currentSearchTerm !== '') {
+                    const searchTerm = currentSearchTerm.toLowerCase();
+                    const searchableFields = [
+                        submission.telegramUserId?.toString(),
+                        submission.id, // Search by document ID
+                        submission.telegramUsername?.toLowerCase(),
+                        submission.telegramFullName?.toLowerCase()
+                    ];
+                    
+                    const matches = searchableFields.some(field => 
+                        field && field.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (!matches) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            // Sort by timestamp (newest first)
+            filteredSubmissions.sort((a, b) => {
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+            
+            // Check if we need to show watermark for approved files
+            const hasApprovedFiles = filteredSubmissions.some(s => s.status === 'approved');
+            if (hasApprovedFiles && currentStatusFilter === 'approved') {
+                watermark.style.display = 'block';
+            } else {
+                watermark.style.display = 'none';
+            }
+            
+            // Generate table HTML
+            if (filteredSubmissions.length === 0) {
+                fileTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px;">
+                            No submissions found matching the current filters.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let tableHTML = '';
+            
+            filteredSubmissions.forEach((submission, index) => {
+                const submissionTime = submission.submissionTime || 'N/A';
+                const status = submission.status || 'pending';
+                const documentId = submission.id; // Use the document ID instead of timestamp
+                
+                tableHTML += `
+                    <tr>
+                        <td>${documentId}</td>
+                        <td>${submission.telegramUserId || 'N/A'}</td>
+                        <td>${submission.telegramFullName || submission.telegramUsername || 'N/A'}</td>
+                        <td>${submission.accountType || 'N/A'}</td>
+                        <td>${submissionTime}</td>
+                        <td><span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                        <td>
+                            <button class="action-btn" data-id="${submission.id}" data-status="${status}">
+                                <i class="fas fa-cog"></i> Action
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            fileTableBody.innerHTML = tableHTML;
+            
+            // Add event listeners to action buttons
+            document.querySelectorAll('.action-btn[data-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const submissionId = this.getAttribute('data-id');
+                    const status = this.getAttribute('data-status');
+                    openActionModal(submissionId, status);
+                });
+            });
+        }
+
+        // Open action modal
+        function openActionModal(submissionId, currentStatus) {
+            currentSubmissionId = submissionId;
+            const submission = allSubmissions.find(s => s.id === submissionId);
+            
+            if (!submission) {
+                showNotification('Submission not found', 'error');
+                return;
+            }
+            
+            // Set modal title based on current status
+            let modalTitle = '';
+            let actionOptions = '<option value="" disabled selected>Select an action</option>';
+            
+            if (currentStatus === 'pending') {
+                modalTitle = 'Process New File';
+                actionOptions += `
+                    <option value="processing">Processing</option>
+                    <option value="rejected">Rejected</option>
+                `;
+                approveFields.style.display = 'none';
+            } else if (currentStatus === 'processing') {
+                modalTitle = 'Process File';
+                actionOptions += `
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                `;
+            } else if (currentStatus === 'approved') {
+                modalTitle = 'View Approved File';
+                // For approved files, disable the form elements but keep them visible
+                actionSelect.disabled = true;
+                rejectReason.disabled = true;
+                receivedIds.disabled = true;
+                earningAmount.disabled = true;
+                submitAction.disabled = true;
+                
+                // Set the values for approved files
+                actionSelect.innerHTML = '<option value="approved" selected>Approved</option>';
+                if (submission.receivedIds) {
+                    receivedIds.value = submission.receivedIds;
+                }
+                if (submission.earning) {
+                    earningAmount.value = submission.earning;
+                }
+            }
+            
+            document.querySelector('.modal-title').innerHTML = `<i class="fas fa-file-alt"></i> ${modalTitle}`;
+            
+            if (currentStatus !== 'approved') {
+                actionSelect.innerHTML = actionOptions;
+                actionSelect.disabled = false;
+                rejectReason.disabled = false;
+                receivedIds.disabled = false;
+                earningAmount.disabled = false;
+                submitAction.disabled = false;
+            }
+            
+            // Populate file details with all information
+            modalFileDetails.innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-row">
+                        <div class="detail-label">Document ID:</div>
+                        <div class="detail-value">${submission.id || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">User ID:</div>
+                        <div class="detail-value">${submission.telegramUserId || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Username:</div>
+                        <div class="detail-value">${submission.telegramUsername || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Full Name:</div>
+                        <div class="detail-value">${submission.telegramFullName || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Account Type:</div>
+                        <div class="detail-value">${submission.accountType || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">2FA/Cookie Type:</div>
+                        <div class="detail-value">${submission.cookie2fa || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Friend Type:</div>
+                        <div class="detail-value">${submission.fdType || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Mail Type:</div>
+                        <div class="detail-value">${submission.mailBox || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Google Sheet:</div>
+                        <div class="detail-value">
+                            ${submission.googleSheet ? 
+                                `<a href="${submission.googleSheet}" target="_blank">${submission.googleSheet}</a>` : 
+                                'N/A'}
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Total ID:</div>
+                        <div class="detail-value">${submission.ttlId || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Submission Time:</div>
+                        <div class="detail-value">${submission.submissionTime || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Reset form fields if not approved
+            if (currentStatus !== 'approved') {
+                rejectReason.value = '';
+                receivedIds.value = '';
+                earningAmount.value = '';
+                rejectReasonField.classList.remove('show');
+                approveFields.style.display = 'none';
+            } else {
+                // For approved files, show the values but make them read-only
+                if (submission.receivedIds) {
+                    approveFields.style.display = 'block';
+                }
+            }
+            
+            // Show modal
+            actionModal.classList.add('active');
+        }
+
+        // Update local submission status without reloading from Firebase
+        function updateLocalSubmissionStatus(submissionId, newStatus) {
+            const submissionIndex = allSubmissions.findIndex(s => s.id === submissionId);
+            if (submissionIndex !== -1) {
+                allSubmissions[submissionIndex].status = newStatus;
+                renderTable(); // Just refresh the UI
+            }
+        }
+
+        // Update user balance, todayEarning and totalEarning in Firestore
+        async function updateUserInFirestore(userId, earning, receivedIdsCount) {
+            try {
+                const userRef = firestore.collection('users').doc(userId.toString());
+                const userDoc = await userRef.get();
+                
+                const today = new Date().toDateString();
+                const currentDate = new Date();
+                
+                if (userDoc.exists) {
+                    // User exists, update their data
+                    const userData = userDoc.data();
+                    const currentBalance = userData.balance || 0;
+                    const currentTotalEarning = userData.totalEarning || 0;
+                    const currentTodayEarning = userData.todayEarning || 0;
+                    const lastUpdatedDate = userData.lastUpdatedDate ? new Date(userData.lastUpdatedDate).toDateString() : null;
+                    
+                    // Reset todayEarning if it's a new day
+                    let newTodayEarning = currentTodayEarning;
+                    if (lastUpdatedDate !== today) {
+                        newTodayEarning = 0;
+                    }
+                    
+                    // Update user document
+                    await userRef.update({
+                        balance: currentBalance + earning,
+                        totalEarning: currentTotalEarning + earning,
+                        todayEarning: newTodayEarning + earning,
+                        total_received_ids: (userData.total_received_ids || 0) + parseInt(receivedIdsCount),
+                        lastUpdated: currentDate,
+                        lastUpdatedDate: today
+                    });
+                    
+                    console.log('User data updated in Firestore successfully');
+                } else {
+                    // User doesn't exist, create new document
+                    await userRef.set({
+                        user_id: userId,
+                        balance: earning,
+                        totalEarning: earning,
+                        todayEarning: earning,
+                        total_received_ids: parseInt(receivedIdsCount),
+                        created_at: currentDate,
+                        lastUpdated: currentDate,
+                        lastUpdatedDate: today
+                    });
+                    
+                    console.log('New user created in Firestore successfully');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error updating user in Firestore:', error);
+                return false;
+            }
+        }
+
+        // Handle file actions (approve, reject, processing)
+        async function handleFileAction(submissionId, action, additionalData = {}) {
+            // Find the submission
+            const submission = allSubmissions.find(s => s.id === submissionId);
+            
+            if (!submission) {
+                showNotification('Submission not found', 'error');
+                return;
+            }
+            
+            // Don't allow same status update
+            if (submission.status === action) {
+                showNotification(`Submission is already ${action}`, 'error');
+                return;
+            }
+            
+            // Prepare updates for Firebase
+            const updates = {};
+            const currentTime = Date.now();
+            
+            // Update status
+            updates[`/submissions/${submissionId}/status`] = action;
+            
+            // Add additional data if provided
+            if (additionalData.receivedIds) {
+                updates[`/submissions/${submissionId}/receivedIds`] = additionalData.receivedIds;
+            }
+            
+            if (additionalData.earning) {
+                updates[`/submissions/${submissionId}/earning`] = additionalData.earning;
+            }
+            
+            // Add to status history
+            const statusHistoryItem = {
+                status: action,
+                timestamp: currentTime,
+                changedBy: 'admin'
+            };
+            
+            // Initialize statusHistory array if it doesn't exist
+            if (!submission.statusHistory) {
+                updates[`/submissions/${submissionId}/statusHistory`] = [statusHistoryItem];
+            } else {
+                // Add new status to history
+                const newHistory = [...submission.statusHistory, statusHistoryItem];
+                updates[`/submissions/${submissionId}/statusHistory`] = newHistory;
+            }
+            
+            // Update user balance and total received IDs in Firestore if approved
+            if (action === 'approved' && additionalData.earning && additionalData.receivedIds) {
+                const userId = submission.telegramUserId;
+                if (userId) {
+                    // Update user in Firestore
+                    const firestoreSuccess = await updateUserInFirestore(
+                        userId, 
+                        additionalData.earning, 
+                        additionalData.receivedIds
+                    );
+                    
+                    if (!firestoreSuccess) {
+                        showNotification('Error updating user data in Firestore', 'error');
+                        return;
+                    }
+                }
+            }
+            
+            // Update status in Firebase Realtime Database
+            database.ref().update(updates).then(() => {
+                showNotification(`Submission status updated to ${action}`, 'success');
+                updateLocalSubmissionStatus(submissionId, action);
+                sendTelegramNotification(submission, action, additionalData);
+                actionModal.classList.remove('active');
+            }).catch((error) => {
+                showNotification('Error updating status: ' + error.message, 'error');
+            });
+        }
+
+        // Send Telegram notification with updated message format
+        function sendTelegramNotification(submission, action, additionalData = {}) {
+            const chatId = submission.telegramUserId;
+            
+            if (!chatId) {
+                console.error('No Telegram User ID found for submission:', submission);
+                return;
+            }
+            
+            // Use the original submission date
+            const submissionDate = submission.submissionTime || new Date(submission.timestamp || Date.now()).toLocaleDateString();
+            
+            // Base message with all original information
+            let message = `${getStatusEmoji(action)} আপনার জমা দেওয়ার ফাইল ${action.toUpperCase()} করা হয়েছে।\n\n`;
+            
+            // Add all original information
+            message += `AgT: ${submission.accountType} `;
+            message += `- ${submission.mailBox} \n`;
+            message += `FcT: ${submission.fdType} -`;
+            message += ` ${submission.cookie2fa}\n`;
+            message += `Document ID: ${submission.id}\n`;
+            message += `Date: ${submissionDate}\n`;
+            
+            // Add rejection reason if applicable
+            if (action === 'rejected' && additionalData.rejectReason) {
+                message += `\nReason: ${additionalData.rejectReason}\n`;
+            }
+            
+            // Add received IDs and earning if approved
+            if (action === 'approved') {
+                if (additionalData.receivedIds) {
+                    message += `\nReceived IDs: ${additionalData.receivedIds}\n`;
+                }
+                if (additionalData.earning) {
+                    message += `Earning: $${additionalData.earning}\n\n`;
+                    message += `আপনার উপার্জন ব্যালেন্সে জমা করা হয়েছে।\nঅনুগ্রহ করে আপনার ব্যালেন্স চেক করুন।\n`;
+                }
+            }
+            
+            // Simulate API call to Telegram
+            fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message,
+                    parse_mode: 'HTML'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    console.log('Telegram message sent successfully');
+                } else {
+                    console.error('Failed to send Telegram message:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending Telegram message:', error);
+            });
+        }
+
+        // Helper function to get emoji for status
+        function getStatusEmoji(action) {
+            const emojis = {
+                'approved': '✅',
+                'rejected': '❌',
+                'processing': '⏳',
+                'back': '↩️',
+                'received': '📥',
+                'pending': '⏱️'
+            };
+            return emojis[action] || '📋';
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Theme toggle event listener
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Platform filter event listener
+            platformFilter.addEventListener('change', function() {
+                currentPlatformFilter = this.value;
+                renderTable();
+            });
+            
+            // Date filter event listener
+            dateFilter.addEventListener('change', function() {
+                currentDateFilter = this.value;
+                renderTable();
+            });
+            
+            // Status tabs event listeners
+            statusTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    statusTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentStatusFilter = this.getAttribute('data-status');
+                    renderTable();
+                });
+            });
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                currentSearchTerm = this.value.trim();
+                renderTable();
+            });
+            
+            // Modal event listeners
+            closeModal.addEventListener('click', function() {
+                actionModal.classList.remove('active');
+            });
+            
+            cancelAction.addEventListener('click', function() {
+                actionModal.classList.remove('active');
+            });
+            
+            // Action select change listener
+            actionSelect.addEventListener('change', function() {
+                const selectedAction = this.value;
+                
+                // Show/hide fields based on selection
+                if (selectedAction === 'rejected') {
+                    rejectReasonField.classList.add('show');
+                    approveFields.style.display = 'none';
+                } else if (selectedAction === 'approved') {
+                    rejectReasonField.classList.remove('show');
+                    approveFields.style.display = 'block';
+                } else {
+                    rejectReasonField.classList.remove('show');
+                    approveFields.style.display = 'none';
+                }
+            });
+            
+            // Submit action listener
+            submitAction.addEventListener('click', function() {
+                const selectedAction = actionSelect.value;
+                
+                if (!selectedAction || selectedAction === '') {
+                    showNotification('Please select an action', 'error');
+                    return;
+                }
+                
+                const additionalData = {};
+                
+                if (selectedAction === 'rejected') {
+                    if (!rejectReason.value.trim()) {
+                        showNotification('Please provide a rejection reason', 'error');
+                        return;
+                    }
+                    additionalData.rejectReason = rejectReason.value.trim();
+                } else if (selectedAction === 'approved') {
+                    if (!receivedIds.value.trim() || !earningAmount.value) {
+                        showNotification('Please provide received IDs and earning amount', 'error');
+                        return;
+                    }
+                    additionalData.receivedIds = receivedIds.value.trim();
+                    additionalData.earning = parseFloat(earningAmount.value);
+                }
+                
+                handleFileAction(currentSubmissionId, selectedAction, additionalData);
+            });
+            
+            // Close modal when clicking outside
+            actionModal.addEventListener('click', function(e) {
+                if (e.target === actionModal) {
+                    actionModal.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
